@@ -36,9 +36,9 @@ app.use(express.urlencoded({ extended: true }));
 // ─── Import Routes ─────────────────────────────────────────────────────────
 const authRoutes = require('./src/routes/authRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
+const menuRoutes = require('./src/routes/menuRoutes');       // Step 3
+const quoteRoutes = require('./src/routes/quoteRoutes');     // Step 4
 // FUTURE ROUTES (uncomment as each step is implemented):
-// const menuRoutes       = require('./src/routes/menuRoutes');
-// const quoteRoutes      = require('./src/routes/quoteRoutes');
 // const orderRoutes      = require('./src/routes/orderRoutes');
 // const dashboardRoutes  = require('./src/routes/dashboardRoutes');
 // const invoiceRoutes    = require('./src/routes/invoiceRoutes');
@@ -55,8 +55,10 @@ app.get('/', (req, res) => {
         message: '🍽️  Catering Ops Hub API is running',
         version: '1.0.0',
         implemented: [
-            'GET/POST  /api/auth',
-            'GET/POST/PUT/DELETE  /api/customers',
+            'GET/POST              /api/auth',
+            'GET/POST/PUT/DELETE   /api/customers',
+            'GET/POST/PUT/DELETE/PATCH  /api/menu',
+            'GET/POST/PUT/DELETE   /api/quotes  (+POST /:id/convert)',
         ],
     });
 });
@@ -64,9 +66,9 @@ app.get('/', (req, res) => {
 // ─── Mount Routes ─────────────────────────────────────────────────────────
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
+app.use('/api/menu', menuRoutes);       // Step 3
+app.use('/api/quotes', quoteRoutes);    // Step 4
 // FUTURE MOUNTS (uncomment as implemented):
-// app.use('/api/menu',      menuRoutes);
-// app.use('/api/quotes',    quoteRoutes);
 // app.use('/api/orders',    orderRoutes);
 // app.use('/api/dashboard', dashboardRoutes);
 // app.use('/api/invoices',  invoiceRoutes);
