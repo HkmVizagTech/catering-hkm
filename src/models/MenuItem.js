@@ -52,7 +52,7 @@ const menuItemSchema = new mongoose.Schema(
     }
 );
 
-// ── Indexes ───────────────────────────────────────────────────────────────────
+// ── Indexes 
 menuItemSchema.index({ name: 'text', description: 'text' });
 menuItemSchema.index({ category: 1 });
 menuItemSchema.index({ isVeg: 1 });

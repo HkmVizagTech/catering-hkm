@@ -16,7 +16,7 @@ const customerSchema = new mongoose.Schema(
             type: String,
             trim: true,
             lowercase: true,
-            sparse: true, // allow multiple nulls
+            sparse: true, 
             match: [/^\S+@\S+\.\S+$/, 'Please enter a valid email'],
         },
         phone: {
@@ -49,12 +49,12 @@ const customerSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
-        // ── Integration Fields ───────────────────────────────────────────────
+        // ── Integration Fields 
         zohoContactId: {
             type: String,
             default: null,
         },
-        // ── Denormalized Counters (updated on order/payment events) ─────────
+        // ── Denormalized Counters (updated on order/payment events) 
         totalOrders: {
             type: Number,
             default: 0,
@@ -73,7 +73,7 @@ const customerSchema = new mongoose.Schema(
     }
 );
 
-// ── Indexes ───────────────────────────────────────────────────────────────────
+// ── Indexes 
 customerSchema.index({ name: 'text', company: 'text', email: 'text' });
 customerSchema.index({ phone: 1 });
 customerSchema.index({ isActive: 1 });

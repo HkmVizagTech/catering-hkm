@@ -38,9 +38,9 @@ const authRoutes = require('./src/routes/authRoutes');
 const customerRoutes = require('./src/routes/customerRoutes');
 const menuRoutes = require('./src/routes/menuRoutes');       // Step 3
 const quoteRoutes = require('./src/routes/quoteRoutes');     // Step 4
+const orderRoutes = require('./src/routes/orderRoutes');      // Step 5
+const dashboardRoutes = require('./src/routes/dashboardRoutes');  // Step 6
 // FUTURE ROUTES (uncomment as each step is implemented):
-// const orderRoutes      = require('./src/routes/orderRoutes');
-// const dashboardRoutes  = require('./src/routes/dashboardRoutes');
 // const invoiceRoutes    = require('./src/routes/invoiceRoutes');
 // const paymentRoutes    = require('./src/routes/paymentRoutes');
 // const calendarRoutes   = require('./src/routes/calendarRoutes');
@@ -55,10 +55,12 @@ app.get('/', (req, res) => {
         message: '🍽️  Catering Ops Hub API is running',
         version: '1.0.0',
         implemented: [
-            'GET/POST              /api/auth',
-            'GET/POST/PUT/DELETE   /api/customers',
-            'GET/POST/PUT/DELETE/PATCH  /api/menu',
-            'GET/POST/PUT/DELETE   /api/quotes  (+POST /:id/convert)',
+            'GET/POST                        /api/auth',
+            'GET/POST/PUT/DELETE             /api/customers',
+            'GET/POST/PUT/DELETE/PATCH       /api/menu',
+            'GET/POST/PUT/DELETE             /api/quotes  (+POST /:id/convert)',
+            'GET/POST/PUT/PATCH              /api/orders  (+export, +archive)',
+            'GET                            /api/dashboard/summary & /stats',
         ],
     });
 });
@@ -68,9 +70,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/menu', menuRoutes);       // Step 3
 app.use('/api/quotes', quoteRoutes);    // Step 4
+app.use('/api/orders', orderRoutes);    // Step 5
+app.use('/api/dashboard', dashboardRoutes); // Step 6
 // FUTURE MOUNTS (uncomment as implemented):
-// app.use('/api/orders',    orderRoutes);
-// app.use('/api/dashboard', dashboardRoutes);
 // app.use('/api/invoices',  invoiceRoutes);
 // app.use('/api/payments',  paymentRoutes);
 // app.use('/api/calendar',  calendarRoutes);
