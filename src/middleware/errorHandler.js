@@ -3,6 +3,7 @@
  * Centralized error handling middleware.
  * Catches all errors thrown via next(err) in any controller.
  */
+const logger = require('../utils/logger');
 
 const errorHandler = (err, req, res, next) => {
     let statusCode = err.statusCode || 500;
@@ -39,10 +40,11 @@ const errorHandler = (err, req, res, next) => {
         message = 'Token has expired. Please log in again.';
     }
 
-    // ── Log to console in development 
-    if (process.env.NODE_ENV !== 'production') {
-        console.error(`[ERROR] ${statusCode} - ${message}`);
-        if (statusCode === 500) console.error(err.stack);
+    // ── Log using Winston 
+    if (statusCode >= 500) {
+        logger.error(`[${req.method} ${req.originalUrl}] ${statusCode} - ${message}`, { stack: err.stack });
+    } else {
+        logger.warn(`[${req.method} ${req.originalUrl}] ${statusCode} - ${message}`);
     }
 
     res.status(statusCode).json({

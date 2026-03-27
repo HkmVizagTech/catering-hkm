@@ -15,7 +15,6 @@ const orderSchema = new mongoose.Schema(
     {
         orderNumber: {
             type: String,
-            unique: true,
             trim: true,
         },
         customerId: {
@@ -79,7 +78,6 @@ const orderSchema = new mongoose.Schema(
         },
         notes: { type: String, default: '' },
         isArchived: { type: Boolean, default: false },
-        zohoSalesOrderId: { type: String, default: null },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'User',
@@ -91,7 +89,7 @@ const orderSchema = new mongoose.Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
-orderSchema.index({ orderNumber: 1 });
+orderSchema.index({ orderNumber: 1 }, { unique: true });
 orderSchema.index({ customerId: 1 });
 orderSchema.index({ status: 1 });
 orderSchema.index({ eventDate: 1 });

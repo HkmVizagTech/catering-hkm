@@ -49,11 +49,7 @@ const customerSchema = new mongoose.Schema(
             type: [String],
             default: [],
         },
-        // ── Integration Fields 
-        zohoContactId: {
-            type: String,
-            default: null,
-        },
+
         // ── Denormalized Counters (updated on order/payment events) 
         totalOrders: {
             type: Number,

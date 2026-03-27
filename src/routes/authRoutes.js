@@ -1,9 +1,16 @@
 const express = require('express');
 const { body } = require('express-validator');
+const rateLimit = require('express-rate-limit');
 const { register, login, logout, getMe } = require('../controllers/authController');
 const { protect } = require('../middleware/authMiddleware');
 
 const router = express.Router();
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 requests per windowMs for auth routes
+    message: 'Too many requests from this IP, please try again after 15 minutes',
+});
 const registerValidation = [
     body('name')
         .trim()
@@ -32,10 +39,10 @@ const loginValidation = [
         .notEmpty().withMessage('Password is required'),
 ];
 // @POST /api/auth/register 
-router.post('/register', registerValidation, register);
+router.post('/register', authLimiter, registerValidation, register);
 
 // @POST /api/auth/login 
-router.post('/login', loginValidation, login);
+router.post('/login', authLimiter, loginValidation, login);
 
 // @POST /api/auth/logout  
 router.post('/logout', protect, logout);

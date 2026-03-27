@@ -57,7 +57,6 @@ const quoteSchema = new mongoose.Schema(
         },
         notes: { type: String, default: '' },
         termsConditions: { type: String, default: '' },
-        zohoEstimateId: { type: String, default: null },
         convertedToOrderId: {
             type: mongoose.Schema.Types.ObjectId,
             ref: 'Order',
@@ -74,7 +73,6 @@ const quoteSchema = new mongoose.Schema(
 );
 
 // ── Indexes ───────────────────────────────────────────────────────────────────
-quoteSchema.index({ quoteNumber: 1 });
 quoteSchema.index({ customerId: 1 });
 quoteSchema.index({ status: 1 });
 quoteSchema.index({ eventDate: 1 });

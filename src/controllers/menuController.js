@@ -53,7 +53,8 @@ const getMenuItems = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const createMenuItem = async (req, res, next) => {
     try {
-        const { name, category, price, unit, isVeg, description, imageUrl, tags } = req.body;
+        const { name, category, price, unit, isVeg, description, tags } = req.body;
+        const imageUrl = req.file ? (req.file.linkUrl || req.file.path) : req.body.imageUrl;
 
         if (!name || !category || price === undefined) {
             return next(createError(400, 'Name, category, and price are required.'));
@@ -87,12 +88,19 @@ const createMenuItem = async (req, res, next) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const updateMenuItem = async (req, res, next) => {
     try {
-        const allowedFields = ['name', 'category', 'price', 'unit', 'isVeg', 'description', 'imageUrl', 'tags', 'isAvailable'];
+        const allowedFields = ['name', 'category', 'price', 'unit', 'isVeg', 'description', 'tags', 'isAvailable'];
 
         const updates = {};
         allowedFields.forEach((field) => {
             if (req.body[field] !== undefined) updates[field] = req.body[field];
         });
+
+        // Handle image update separately
+        if (req.file) {
+            updates.imageUrl = req.file.linkUrl || req.file.path;
+        } else if (req.body.imageUrl !== undefined) {
+            updates.imageUrl = req.body.imageUrl;
+        }
 
         const item = await MenuItem.findByIdAndUpdate(
             req.params.id,
