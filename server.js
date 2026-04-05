@@ -44,11 +44,12 @@ const orderRoutes = require('./src/routes/orderRoutes');      // Step 5
 const dashboardRoutes = require('./src/routes/dashboardRoutes');  // Step 6
 const invoiceRoutes  = require('./src/routes/invoiceRoutes');   // Step 7
 const paymentRoutes  = require('./src/routes/paymentRoutes');   // Step 8
-const calendarRoutes = require('./src/routes/calendarRoutes');  // Step 9
-const kitchenRoutes  = require('./src/routes/kitchenRoutes');   // Step 10
-const feedbackRoutes = require('./src/routes/feedbackRoutes');  // Step 11
-const settingsRoutes = require('./src/routes/settingsRoutes');  // Step 12
-// FUTURE ROUTES (uncomment as each step is implemented):
+const expenseRoutes  = require('./src/routes/expenseRoutes');   // Step 9
+const reportRoutes   = require('./src/routes/reportRoutes');    // Step 10
+const calendarRoutes = require('./src/routes/calendarRoutes');  // Step 11
+const kitchenRoutes  = require('./src/routes/kitchenRoutes');   // Step 12
+const feedbackRoutes = require('./src/routes/feedbackRoutes');  // Step 13
+const settingsRoutes = require('./src/routes/settingsRoutes');  // Step 14
 
 // ─── Health Check ─────────────────────────────────────────────────────────
 app.get('/', (req, res) => {
@@ -65,6 +66,7 @@ app.get('/', (req, res) => {
             'GET                            /api/dashboard/summary & /stats',
             'GET/POST/PUT/POST               /api/invoices (+pdf, +send, +bulk-export)',
             'GET/POST/PATCH/GET              /api/payments (+razorpay, +summary, +export, +reconcile)',
+            'GET/POST/GET/PUT/DELETE         /api/expenses (+summary)',
             'GET                             /api/calendar/events',
             'GET/PATCH                       /api/kitchen/orders (+status, socket.io)',
             'GET/POST                        /api/feedback (+summary, +export)',
@@ -82,8 +84,10 @@ app.use('/api/orders', orderRoutes);    // Step 5
 app.use('/api/dashboard', dashboardRoutes); // Step 6
 app.use('/api/invoices',  invoiceRoutes);  // Step 7
 app.use('/api/payments', paymentRoutes);   // Step 8
+app.use('/api/expenses', expenseRoutes);   // Step 13
+app.use('/api/reports', reportRoutes);     // Step 14
+app.use('/api/kitchen', kitchenRoutes);    // Step 15
 app.use('/api/calendar', calendarRoutes);  // Step 9
-app.use('/api/kitchen',  kitchenRoutes);   // Step 10
 app.use('/api/feedback', feedbackRoutes);  // Step 11
 app.use('/api/settings', settingsRoutes);  // Step 12
 // FUTURE MOUNTS (uncomment as implemented):

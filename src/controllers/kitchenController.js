@@ -1,96 +1,71 @@
 const Order = require('../models/Order');
-const { createError } = require('../middleware/errorHandler');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get all active orders for today (Kitchen View)
-// @route   GET /api/kitchen/orders
-// @access  Private (Kitchen Staff / Admin)
-// ─────────────────────────────────────────────────────────────────────────────
+// ── GET KITCHEN ORDERS ──────────────────────────────────────────────────────
 const getKitchenOrders = async (req, res, next) => {
     try {
-        const { department } = req.query; // optional filter for specific kitchens (e.g., Bakery)
+        // Fetch upcoming confirmed or in-prep orders
+        const orders = await Order.find({
+            status: { $in: ['Confirmed', 'In-Preparation'] }, 
+            isArchived: false
+        })
+        .populate('customerId', 'name')
+        .populate('lineItems.menuItemId', 'name category')
+        .sort({ eventDate: 1 })
+        .lean();
 
-        // Find orders for today (or very near future) that are not archived or draft
-        const today = new Date();
-        today.setHours(0, 0, 0, 0);
-
-        const tomorrow = new Date(today);
-        tomorrow.setDate(tomorrow.getDate() + 1);
-
-        const query = {
-            isArchived: false,
-            status: { $in: ['Confirmed', 'In-Preparation', 'Ready'] },
-            eventDate: { $gte: today, $lt: tomorrow },
-        };
-
-        if (department) {
-            query.department = department;
-        }
-
-        const orders = await Order.find(query)
-            .populate('customerId', 'name')
-            .sort({ eventDate: 1, createdAt: 1 })
-            .lean();
+        // Transform for KDS frontend expectations
+        const transformed = orders.map(ord => ({
+            id: ord._id,
+            eventName: ord.eventName || ord.customerId?.name || "Event Order",
+            date: ord.eventDate,
+            status: ord.status === 'In-Preparation' ? 'In-Prep' : 'Confirmed',
+            dueTime: "12:00 PM",
+            menuItems: (ord.lineItems || []).map(i => i.name).filter(Boolean),
+            headcount: ord.pax || 0
+        }));
 
         res.json({
             success: true,
-            count: orders.length,
-            data: orders,
+            data: transformed
         });
-
     } catch (err) {
         next(err);
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Update kitchen status of an order
-// @route   PATCH /api/kitchen/orders/:id/status
-// @access  Private (Kitchen Staff / Admin)
-// ─────────────────────────────────────────────────────────────────────────────
+// ── UPDATE ORDER STATUS ─────────────────────────────────────────────────────
 const updateKitchenStatus = async (req, res, next) => {
     try {
-        const { kitchenStatus } = req.body;
-        
-        if (!['Pending', 'In-Progress', 'Ready'].includes(kitchenStatus)) {
-            return next(createError(400, 'Invalid kitchen status'));
-        }
+        const { id } = req.params;
+        const { status } = req.body;
 
-        const order = await Order.findById(req.params.id);
+        // Map frontend KDS status back to Order model statuses
+        // Confirmed -> Confirmed
+        // In-Prep -> Processing
+        // Ready -> Ready (or Shipped/Delivered)
+        let backendStatus = 'Confirmed';
+        if (status === 'In-Prep') backendStatus = 'Processing';
+        if (status === 'Ready') backendStatus = 'Shipped';
 
-        if (!order) {
-            return next(createError(404, 'Order not found'));
-        }
+        const order = await Order.findByIdAndUpdate(
+            id,
+            { status: backendStatus },
+            { new: true }
+        );
 
-        order.kitchenStatus = kitchenStatus;
+        if (!order) return res.status(404).json({ success: false, message: "Order not found" });
 
-        // Auto-update overall order status if kitchen marks it ready
-        if (kitchenStatus === 'In-Progress') {
-            order.status = 'In-Preparation';
-        } else if (kitchenStatus === 'Ready') {
-            order.status = 'Ready';
-        }
-
-        await order.save();
-
-        // 🔥 BROADCAST TO ALL CONNECTED KITCHEN CLIENTS VIA SOCKET.IO
+        // Emit socket event if io is available
         const io = req.app.get('io');
         if (io) {
-            io.emit('kitchen:statusUpdated', {
-                orderId: order._id,
-                orderNumber: order.orderNumber,
-                kitchenStatus: order.kitchenStatus,
-                status: order.status,
-                department: order.department,
-            });
+            io.emit('kitchen_update', { orderId: id, status: backendStatus });
         }
 
         res.json({
             success: true,
-            message: `Kitchen status updated to ${kitchenStatus}`,
-            data: order,
+            message: `Order status updated to ${status}`,
+            data: order
         });
-
     } catch (err) {
         next(err);
     }
@@ -98,5 +73,5 @@ const updateKitchenStatus = async (req, res, next) => {
 
 module.exports = {
     getKitchenOrders,
-    updateKitchenStatus,
+    updateKitchenStatus
 };

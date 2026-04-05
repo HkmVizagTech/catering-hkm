@@ -1,21 +1,14 @@
 const express = require('express');
 const router = express.Router();
-const {
-    submitFeedback,
-    getFeedback,
-    getFeedbackSummary,
-    exportFeedback,
-} = require('../controllers/feedbackController');
+const { getAllFeedback, submitFeedback, updateFeedbackStatus } = require('../controllers/feedbackController');
 const { protect } = require('../middleware/authMiddleware');
 
-router.use(protect); // All feedback routes are protected
+// Public route for customers to submit feedback
+router.post('/', submitFeedback);
 
-// IMPORTANT: specific named parameters must come before flexible ones like /:id
-router.get('/summary', getFeedbackSummary);
-router.get('/export', exportFeedback);
-
-router.route('/')
-    .get(getFeedback)            // List all feedback (with filters)
-    .post(submitFeedback);       // Submit feedback for an order
+// Admin-only routes
+router.use(protect);
+router.get('/', getAllFeedback);
+router.put('/:id', updateFeedbackStatus);
 
 module.exports = router;

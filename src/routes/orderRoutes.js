@@ -8,6 +8,7 @@ const {
     updateOrderStatus,
     archiveOrder,
     exportOrders,
+    sendOrderWhatsApp,
 } = require('../controllers/orderController');
 const { protect } = require('../middleware/authMiddleware');
 
@@ -26,5 +27,6 @@ router.route('/:id')
 
 router.patch('/:id/status', updateOrderStatus);   // PATCH /api/orders/:id/status
 router.patch('/:id/archive', archiveOrder);        // PATCH /api/orders/:id/archive
+router.post('/:id/send-whatsapp', sendOrderWhatsApp); // POST /api/orders/:id/send-whatsapp
 
 module.exports = router;

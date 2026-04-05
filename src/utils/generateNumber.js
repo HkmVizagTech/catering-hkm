@@ -47,6 +47,7 @@ const getFieldName = (prefix) => {
         QT: 'quoteNumber',
         INV: 'invoiceNumber',
         TXN: 'transactionId',
+        EXP: 'expenseNumber',
     };
     return map[prefix] || 'number';
 };

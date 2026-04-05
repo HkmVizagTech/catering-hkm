@@ -252,6 +252,8 @@ const convertQuoteToOrder = async (req, res, next) => {
             return next(createError(400, `Cannot convert a ${quote.status} quote.`));
         }
 
+        const { eventDate, venue, pax } = req.body;
+
         // Auto-generate order number
         const orderNumber = await generateNumber('ORD', Order);
 
@@ -260,9 +262,9 @@ const convertQuoteToOrder = async (req, res, next) => {
             customerId: quote.customerId,
             quoteId: quote._id,
             eventName: quote.eventName,
-            eventDate: quote.eventDate,
-            venue: quote.venue,
-            pax: quote.pax,
+            eventDate: eventDate || quote.eventDate,
+            venue: venue || quote.venue,
+            pax: pax || quote.pax,
             lineItems: quote.lineItems,
             subTotal: quote.subTotal,
             taxRate: quote.taxRate,

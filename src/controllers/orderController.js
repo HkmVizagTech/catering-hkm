@@ -293,6 +293,41 @@ const exportOrders = async (req, res, next) => {
     }
 };
 
+// ─────────────────────────────────────────────────────────────────────────────
+// @desc    Send order notification via WhatsApp
+// @route   POST /api/orders/:id/send-whatsapp
+// @access  Private
+// ─────────────────────────────────────────────────────────────────────────────
+const sendOrderWhatsApp = async (req, res, next) => {
+    try {
+        const { id } = req.params;
+        const { template } = req.body;
+
+        const order = await Order.findById(id).populate('customerId');
+        if (!order) return next(createError(404, 'Order not found'));
+
+        const phone = order.customerId?.phone;
+        if (!phone) return next(createError(400, 'Customer phone number not found'));
+
+        // Basic mock notification if template is not "Invoice" or something specific
+        // Real implementation should match your WhatsApp provider templates
+        
+        const { sendReceiptWhatsapp } = require('../services/whatsappService');
+        
+        // Use a generic logic for now to call any configured template
+        // Adjust this if you have specific templates for Confirmation, Prepared, etc.
+        const response = await sendReceiptWhatsapp(phone, '', order.customerId.name, order.totalAmount);
+
+        if (response.status === 'failed') {
+            return res.status(500).json({ success: false, message: 'WhatsApp sending failed', error: response.error });
+        }
+
+        res.json({ success: true, message: `WhatsApp notification "${template}" sent successfully to ${phone}` });
+    } catch (err) {
+        next(err);
+    }
+};
+
 module.exports = {
     getOrders,
     createOrder,
@@ -301,4 +336,5 @@ module.exports = {
     updateOrderStatus,
     archiveOrder,
     exportOrders,
+    sendOrderWhatsApp,
 };

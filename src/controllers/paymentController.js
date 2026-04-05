@@ -1,10 +1,11 @@
-const { razorpay } = require('../config/razorpay');
+const { initRazorpay } = require('../config/razorpay');
 const Payment = require('../models/Payment');
 const Invoice = require('../models/Invoice');
 const Order = require('../models/Order');
 const Customer = require('../models/Customer');
 const generateNumber = require('../utils/generateNumber');
 const { createError } = require('../middleware/errorHandler');
+const logger = require('../utils/logger');
 
 // ─────────────────────────────────────────────────────────────────────────────
 // HELPER — update Invoice + Order when payment is recorded
@@ -50,42 +51,44 @@ const syncPaymentToInvoiceAndOrder = async (invoiceId, orderId, amount) => {
 // ─────────────────────────────────────────────────────────────────────────────
 const createRazorpayOrder = async (req, res, next) => {
     try {
-        const { orderId, invoiceId, customerId, amount } = req.body;
+        const { orderId, amount } = req.body;
+        
+        logger.info(`[Razorpay] Creating order for Catering Order: ${orderId}, Amount: ${amount}`);
 
-        if (!amount || amount < 1) {
-            return next(createError(400, 'Invalid amount'));
+        // Sanitize & Validate Amount
+        const cleanAmount = typeof amount === 'number' ? amount : parseFloat(String(amount).replace(/[^0-9.]/g, ''));
+        if (isNaN(cleanAmount) || cleanAmount <= 0) {
+            return next(createError(400, 'Invalid payment amount specified'));
         }
 
-        // Validate the catering order exists
-        const cateringOrder = await Order.findById(orderId);
-        if (!cateringOrder) return next(createError(404, 'Order not found'));
-
         const options = {
-            amount: amount * 100,          // Razorpay expects paise
+            amount: Math.round(cleanAmount * 100), // convert to paise
             currency: 'INR',
-            receipt: `receipt_${Date.now()}`,
-            payment_capture: 1,
+            receipt: `rcpt_${orderId?.toString().slice(-10)}_${Date.now().toString().slice(-6)}`,
             notes: {
-                orderId:    orderId?.toString(),
-                invoiceId:  invoiceId?.toString() || '',
-                customerId: customerId?.toString() || '',
-            },
+                cateringOrderId: orderId || 'N/A'
+            }
         };
 
-        const razorpayOrder = await razorpay.orders.create(options);
+        const razorpayInstance = initRazorpay();
+        if (!razorpayInstance) {
+            return next(createError(500, 'Razorpay configuration error - check server logs'));
+        }
 
-        return res.status(200).json({
+        const razorpayOrder = await razorpayInstance.orders.create(options);
+        
+        console.log(`[Razorpay] Order created successfully: ${razorpayOrder.id}`);
+        
+        return res.json({
             success: true,
-            orderId:        razorpayOrder.id,
-            amount:         razorpayOrder.amount,
-            currency:       razorpayOrder.currency,
-            key:            process.env.RAZORPAY_KEY_ID,
-            cateringOrderId: orderId,
-            invoiceId,
+            key: process.env.RAZORPAY_KEY_ID,
+            data: razorpayOrder,
         });
-    } catch (error) {
-        console.error('Razorpay create order error:', error);
-        return next(createError(500, 'Razorpay order creation failed'));
+    } catch (err) {
+        logger.error(`Razorpay Error: ${err.message}`, { error: err });
+        
+        const description = (err.error && err.error.description) || err.message || 'unknown error';
+        next(createError(500, `Razorpay error: ${description}`));
     }
 };
 
@@ -99,6 +102,7 @@ const recordPayment = async (req, res, next) => {
         const {
             orderId, invoiceId,
             amount, method, reference, date, notes,
+            razorpayOrderId, razorpayPaymentId
         } = req.body;
 
         if (!amount || amount < 1) return next(createError(400, 'Invalid amount'));
@@ -121,9 +125,11 @@ const recordPayment = async (req, res, next) => {
             invoiceId: invoiceId || null,
             customerId,
             amount,
-            method,
+            method: method || 'Card',
             reference: reference || '',
-            gateway: 'Manual',
+            razorpayOrderId: razorpayOrderId || null,
+            razorpayPaymentId: razorpayPaymentId || null,
+            gateway: razorpayPaymentId ? 'Razorpay' : 'Manual',
             status: 'Completed',
             date: date ? new Date(date) : new Date(),
             notes: notes || '',

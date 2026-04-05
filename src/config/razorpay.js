@@ -1,30 +1,30 @@
-/**
- * razorpay.js — Razorpay SDK Config
- * Lazy-initializes Razorpay so the server doesn't crash on startup if keys are missing.
- * Keys are only required when payment routes are actually called.
- */
 const Razorpay = require('razorpay');
+const logger = require('../utils/logger');
 
-let _razorpay = null;
+let _razorpayInstance = null;
 
-const getRazorpay = () => {
-    if (!_razorpay) {
-        if (!process.env.RAZORPAY_KEY_ID || !process.env.RAZORPAY_KEY_SECRET) {
-            throw new Error(
-                'Razorpay keys not configured. Add RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET to your .env file.'
-            );
+const initRazorpay = () => {
+    if (!_razorpayInstance) {
+        const key_id = (process.env.RAZORPAY_KEY_ID || '').trim();
+        const key_secret = (process.env.RAZORPAY_KEY_SECRET || '').trim();
+
+        if (!key_id || !key_secret) {
+            logger.error('❌ Razorpay Error: KEY_ID or KEY_SECRET is missing in .env');
+            return null;
         }
-        _razorpay = new Razorpay({
-            key_id:     process.env.RAZORPAY_KEY_ID,
-            key_secret: process.env.RAZORPAY_KEY_SECRET,
-        });
+
+        try {
+            _razorpayInstance = new Razorpay({
+                key_id: key_id,
+                key_secret: key_secret,
+            });
+            logger.info(`✅ Razorpay SDK Initialized with ID: ${key_id.slice(0, 10)}...`);
+        } catch (err) {
+            logger.error('❌ Razorpay SDK Init Failed:', { error: err.message });
+            return null;
+        }
     }
-    return _razorpay;
+    return _razorpayInstance;
 };
 
-// For backward compatibility — use getRazorpay() instead of razorpay directly
-const razorpay = new Proxy({}, {
-    get: (_, prop) => getRazorpay()[prop],
-});
-
-module.exports = { razorpay, getRazorpay };
+module.exports = { initRazorpay };

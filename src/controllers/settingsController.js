@@ -1,78 +1,47 @@
 const Settings = require('../models/Settings');
-const { createError } = require('../middleware/errorHandler');
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Get Global Business Settings
-// @route   GET /api/settings
-// @access  Private (Admin)
-// ─────────────────────────────────────────────────────────────────────────────
+// ── GET SETTINGS ──────────────────────────────────────────────────────────
 const getSettings = async (req, res, next) => {
     try {
-        const settings = await Settings.getGlobalSettings();
+        // We assume a single settings document for now.
+        let settings = await Settings.findOne();
         
-        res.json({
-            success: true,
-            data: settings,
-        });
-    } catch (err) {
-        next(err);
-    }
-};
-
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Update Global Business Settings
-// @route   PUT /api/settings
-// @access  Private (Admin Only)
-// ─────────────────────────────────────────────────────────────────────────────
-const updateSettings = async (req, res, next) => {
-    try {
-        const updates = req.body;
-        
-        // Prevent accidental overriding of integrations state directly via this endpoint
-        if (updates.integrations) {
-            delete updates.integrations; 
+        if (!settings) {
+            settings = await Settings.create({}); // Create default if doesn't exist
         }
 
-        const settings = await Settings.getGlobalSettings();
-        
-        Object.keys(updates).forEach((key) => {
-            if (updates[key] !== undefined) {
-                settings[key] = updates[key];
-            }
-        });
-
-        await settings.save();
-
         res.json({
             success: true,
-            message: 'Settings updated successfully',
-            data: settings,
+            data: settings
         });
-
     } catch (err) {
         next(err);
     }
 };
 
-// ─────────────────────────────────────────────────────────────────────────────
-// @desc    Toggle/Configure Razorpay State (mocking for now, real keys in .env)
-// @route   POST /api/settings/razorpay/configure
-// @access  Private (Admin Only)
-// ─────────────────────────────────────────────────────────────────────────────
-const configureRazorpay = async (req, res, next) => {
+// ── UPDATE SETTINGS ───────────────────────────────────────────────────────
+const updateSettings = async (req, res, next) => {
     try {
-        const { isConnected } = req.body;
+        const updateData = req.body;
+        updateData.lastUpdated = Date.now();
+
+        let settings = await Settings.findOne();
         
-        const settings = await Settings.getGlobalSettings();
-        settings.integrations.razorpay.isConnected = isConnected;
-        await settings.save();
+        if (!settings) {
+            settings = await Settings.create(updateData);
+        } else {
+            settings = await Settings.findByIdAndUpdate(
+                settings._id,
+                { $set: updateData },
+                { new: true, runValidators: true }
+            );
+        }
 
         res.json({
             success: true,
-            message: `Razorpay integration ${isConnected ? 'enabled' : 'disabled'}`,
-            data: settings.integrations.razorpay,
+            message: "Settings updated successfully",
+            data: settings
         });
-
     } catch (err) {
         next(err);
     }
@@ -80,6 +49,5 @@ const configureRazorpay = async (req, res, next) => {
 
 module.exports = {
     getSettings,
-    updateSettings,
-    configureRazorpay,
+    updateSettings
 };
