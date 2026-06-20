@@ -1,0 +1,12 @@
+{
+  "name": "hkm-services-monorepo",
+  "version": "1.0.0",
+  "private": true,
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "start npm run dev --prefix api & start npm run dev:client --prefix frontend",
+    "build": "npm run build --prefix frontend"
+  }
+}
